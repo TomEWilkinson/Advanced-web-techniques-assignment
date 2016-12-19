@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student View</title>
+</head>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  <script src="assets/main.js"></script>
+
+<body>
+
+  <nav class="navbar navbar-default">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/AccountHomepage.html">TimeTable App</a>
+      </div>
+
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li class="my-timetable"><a href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/PersonalTimetable.html">My Timetable</a></li>
+          <li><a class="Update-Details" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/UpdateDetails.html">Update Details</a></li>
+          <li class="timetable-link"><a href="#" return false; style="display: none;">Book Sessions<span class="sr-only"></span></a></li>
+          <li class="attendance-link"><a href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/attendance.html" return false; style="display: none;">Attendance<span class="sr-only">(current)</span></a></li>
+          <li class="edit-lessons"><a return false; style="display: none;" href="#">Edit Lessons<span class="sr-only">(current)</span></a></li>
+          <li class="exam-results"><a return false; style="display: none;" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/examresults.html">Exam Results<span class="sr-only">(current)</span></a></li>
+          <li class="analysis"><a return false; style="display: none;" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/analysis.html">Analysis<span class="sr-only">(current)</span></a></li>
+          <li class="map-link"><a return false; style="display: none;" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/campusmap.html">Map<span class="sr-only">(current)</span></a></li>
+        </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#" onClick="logOut()" return false;>logout</a></li>
+      </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+  <div class="conatiner text-center">
+
+    <div class="image-container"></div>
+    <br>
+    <table class="table table-striped"></table>
+
+  </div>
+
+
+</body>
+<script type="text/javascript">
+$(document).ready(function() {
+
+  var data = JSON.parse(getCookie('user').replace(/\[|\]/g, ''));;
+
+  getTimetableLink(data.is_staff);
+
+  var student_id = getParameterByName('student_id');
+  var tableArray = [];
+  var lessonArray = [];
+  var weeklyArray = {};
+  $.ajax({
+    type: "POST",
+    url: '/students/wilkinst/cw1/AttendanceTable.php',
+    dataType:'json',
+    data: {
+          student_id: student_id,
+     },
+     success: function(data) {
+      tableArray = data;
+       $.ajax({
+        type: "POST",
+        url: '/students/wilkinst/cw1/getStudentView.php',
+        dataType:'json',
+         success: function(data) {
+          for (var i = 0; i < data.length; i++) {
+
+             if (typeof lessonArray[data[i].session_id] == 'undefined'){
+
+              lessonArray[data[i].session_id] = 1;
+
+              if (typeof weeklyArray[data[i].lesson] == 'undefined'){
+                var temp = data[i].lesson.toString();
+                weeklyArray[temp] = 1
+              }
+              else {
+                weeklyArray[data[i].lesson] = weeklyArray[data[i].lesson] + 1;
+              }
+
+            }
+
+
+          }
+          makeTable(tableArray);
+
+         },
+      });
+     },
+  }); 
+
+});
+
+function makeTable(tableArray)
+{
+  var displayArray = [];
+
+  for (var key in tableArray) {
+    if (typeof displayArray[tableArray[key].lesson] == 'undefined'){
+      displayArray[tableArray[key].lesson] = tableArray[key].attendance;
+    }
+    else {
+      displayArray[tableArray[key].lesson] =  displayArray[tableArray[key].lesson] + " " + tableArray[key].attendance
+    }
+
+  }
+
+  var table = table + "<tbody> <tr>"
+
+  var longest = 0;
+
+    //find which lesson has the most recrods and store the amount in order to add padding to the rest
+    for (var key in displayArray) {
+      if(displayArray[key] != null)
+      { 
+        str = displayArray[key].replace(/\s/g, ''); //remove white space from string
+        if (str.length > longest)
+        {
+          longest = str.length;
+        }
+      }
+    }
+
+
+    for (var key in displayArray) { 
+      if(displayArray[key] != null) {
+        table = table + "<th scope=\"row\">" + tableArray[0].student_name + "</th> <th>" + tableArray[0].student_id + "</th> <th>" + key + "</th>";
+        var temp = displayArray[key].split(" ");
+
+        for (var i = 0; i <= longest; i++) {
+          if (typeof temp[i] != 'undefined')
+          {
+            table = table +  "<th>" + temp[i] + "</th>";
+          }
+          else {
+            table = table +  "<th> </th>"; 
+          }
+        }
+        table = table + "</tr>";
+      }
+      
+    }
+
+    var table = table + "</tr> </thead>";
+
+    $( ".table" ).append(table);
+    $( ".image-container" ).append("<img src=\"" + tableArray[0].image +  "\">");
+
+
+  }
+
+</script>
+
+
+</html>

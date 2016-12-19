@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Campus Map</title>
+</head>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="assets/core.css">
+
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  <script src="assets/main.js"></script>
+
+<body>
+
+  <nav class="navbar navbar-default">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/AccountHomepage.html">TimeTable App</a>
+      </div>
+
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li class="my-timetable"><a href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/PersonalTimetable.html">My Timetable</a></li>
+          <li><a class="Update-Details" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/UpdateDetails.html">Update Details</a></li>
+          <li class="timetable-link"><a href="#" return false; style="display: none;">Book Sessions<span class="sr-only"></span></a></li>
+          <li class="attendance-link"><a href="#" return false; style="display: none;">Attendance<span class="sr-only">(current)</span></a></li>
+          <li class="edit-lessons"><a return false; style="display: none;" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/editLessons.html">Edit Lessons<span class="sr-only">(current)</span></a></li>
+          <li class="map-link active"><a return false; href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/campusmap.html">Map<span class="sr-only">(current)</span></a></li>
+        </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#" onClick="logOut()" return false;>logout</a></li>
+      </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+
+
+  <div class="container">
+    <div id="map"></div>
+  </div>
+
+</body>
+<script type="text/javascript">
+  var data = JSON.parse(getCookie('user').replace(/\[|\]/g, ''));
+
+  getTimetableLink(data.is_staff);       
+
+  $.ajax({
+    type: "GET",
+    url: '/students/wilkinst/cw1/LessonsTable.php',
+    dataType:'json',
+     success: function(tableData) {
+        $.ajax({
+        type: "POST",
+        data: {
+          student_id: data.user_id,
+        },
+        dataType:'json',
+        url: '/students/wilkinst/cw1/MapData.php',
+         success: function(mapData) {
+            initMap(tableData, mapData);
+          }
+        });
+      }
+    });
+
+function initMap(tableData, mapData)
+{ 
+  var infowindow = new google.maps.InfoWindow(); /* SINGLE */
+  var MMU = {lat: 53.471055, lng: -2.2406577};
+  var map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 15,
+      center: MMU
+  });
+
+  for (var key in tableData) {
+ 
+      var latLng =  new google.maps.LatLng(tableData[key].lesson_location_lat, tableData[key].lesson_location_lon);
+      var contentString = '<div id="content">'+
+                                  '<div id="siteNotice">'+
+                                  '</div>'+
+                                  '<h4 id="firstHeading" class="firstHeading">' + tableData[key].lesson + " " + mapData[tableData[key].lesson].building_name + '</h4>'+
+                                  '<div id="bodyContent">';
+      for (var mapkey in mapData[tableData[key].lesson]) {
+        if(mapkey != "building_name") {
+          contentString = contentString + '<p> lesson at ' + mapkey + ' in room:<b>'+ mapData[tableData[key].lesson][mapkey] +'</b></p>';
+        }
+      }
+
+      contentString = contentString + '</div></div>';
+
+
+      marker = new google.maps.Marker({           
+            position: latLng,
+            map: map,
+            contentString: contentString
+      });
+
+      var infowindow = new google.maps.InfoWindow({});
+
+      marker.addListener('click', function() {
+             infowindow.setContent(this.contentString);
+             infowindow.open(map, this);
+             map.setCenter(this.getPosition());
+       });
+    
+  }
+  
+}
+
+
+</script>
+ <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBooUXgTNPv4_lugyThXOQiIpLDPlI_uVU&callback=initMap">
+    </script>
+
+</html>

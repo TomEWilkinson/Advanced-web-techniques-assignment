@@ -1,0 +1,45 @@
+.time-entry.lesson-full {
+	background-color: #e32c1b;
+	border: 1px solid #e32c1b;
+}
+
+.time-entry.lesson-full:hover {
+	background-color: #e32c1b;
+	border: 1px solid #fff;
+}
+
+.time-entry.lesson-free {
+	background-color: #27ae60;
+	border: 1px solid #27ae60;
+}
+
+.time-entry.lesson-free:hover {
+	background-color: #27ae60;
+	border: 1px solid #fff;
+}
+
+.time-entry small {
+	text-decoration: none;
+}
+
+  #attendance-handle {
+    width: 3em;
+    height: 1.6em;
+    top: 50%;
+    margin-top: -.8em;
+    text-align: center;
+    line-height: 1.6em;
+  }
+  #mark-handle {
+    width: 3em;
+    height: 1.6em;
+    top: 50%;
+    margin-top: -.8em;
+    text-align: center;
+    line-height: 1.6em;
+  }
+ #map {
+   width: 100%;
+   height: 400px;
+   background-color: grey;
+ }

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Homepage</title>
+</head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	<script src="assets/main.js"></script>
+
+<body>
+	<br> <br> <br>
+	<div class="container">
+		<div class="text-center"><h1>Welcome :)</h1></div>
+		<br><br>
+		<form id="login-form">
+			<div class="form-group">
+				<label for="email">Email address</label>
+				<input type="email" class="form-control" id="email" placeholder="Email">
+			</div>
+			<div class="form-group">
+				<label for="password">Password</label>
+				<input type="password" class="form-control" id="password" placeholder="Password">
+			</div>
+			<div class="form-group">
+				<label class="not-found" style="display: none;">User Not Found Please Try Again</label>
+			</div>
+			<button type="submit" class="btn btn-default" id="login-btn">login</button>
+		</form>
+		<br><br><br><br>
+		<button type="button" class="btn btn-danger" id="reset-btn">Reset Data</button>
+	</div>
+</body>
+<script type="text/javascript">
+
+
+$( "#login-form" ).submit(function( event ) {
+
+	var email = $("#email").val();
+	var password = $("#password").val();
+
+	$.ajax({
+	    type: "POST", 
+	    url: "/students/wilkinst/cw1/UserLogin.php",
+	    dataType: 'json',
+	    success: function(data){
+	    	$( ".not-found" ).hide();
+			if(data.length == 0)
+			{
+				$( ".not-found" ).show();
+			}
+			else {
+				var d = new Date();
+			    d.setTime(d.getTime() + (1*24*60*60*1000));
+			    var expires = "expires="+ d.toUTCString();
+			    document.cookie = "user" + "=" + JSON.stringify(data) + ";" + expires + ";path=/";
+				window.location = 'http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/AccountHomepage.html';
+
+
+			}
+
+	    },
+	    error: function(jqXHR, textStatus, errorThrown) {
+  			console.log(textStatus, errorThrown);
+		},
+	     data: {
+	        email: email,
+	        password: password
+	   }
+	})
+
+	event.preventDefault();
+
+});
+
+$( "#reset-btn" ).click(function() {
+	$.get( "/students/wilkinst/cw1/reset.php", function( data ) {
+	  alert( "Reset Finished" );
+	})
+});
+
+</script>
+</html>

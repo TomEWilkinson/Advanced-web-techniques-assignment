@@ -1,0 +1,181 @@
+ <!DOCTYPE html>
+ <html>
+ <head>
+ 	<title>Student Timetable</title>
+
+ 	<link rel="stylesheet" href="assets/timetablejs.css">
+ 	<link rel="stylesheet" href="assets/core.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	<script src="assets/timetable.min.js"></script>
+	<script src="assets/moment.min.js"></script>
+	<script src="assets/main.js"></script>
+
+ </head>
+ <body>
+
+  <nav class="navbar navbar-default">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/AccountHomepage.html">TimeTable App</a>
+      </div>
+
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+           <li class="my-timetable"><a href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/PersonalTimetable.html">My Timetable</a></li>
+           <li class="update-details"><a href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/UpdateDetails.html" return false;>Update Details</a></li>
+           <li class="timetable-link active"><a href="#" return false; ">Book Sessions<span class="sr-only">(current)</span></a></li>
+           <li class="map-link"><a return false; href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/campusmap.html">Map<span class="sr-only">(current)</span></a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+        	<li><a href="#" onClick="logOut()" return false;>logout</a></li>
+      	</ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+  <div class="container">
+	   <div class="text-center message"></div>
+	   <div class="row">
+			<button id="prev-week" type="button" class="btn btn-info timetable-controls pull-left"><span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>Previous week</button>
+			<button id="next-week" type="button" class="btn btn-info timetable-controls pull-right">Next week<span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span></button>
+		</div>
+	 	<div class="timetable"></div>
+ 	</div>
+ 
+ </body>
+ <script type="text/javascript">
+
+$(document).ready(function() {
+ 	var data = JSON.parse(getCookie('user').replace(/\[|\]/g, ''));
+ 	$.ajax({
+	  type: "POST",
+	  url: '/students/wilkinst/cw1/getStudentView.php',
+	  data: {
+	        student_id: data.user_id,
+	        start_date: "2017-05-08 00:00:00", //hard coded date time range to fit in with spec
+	        end_date: "2017-05-12 23:59:00",
+	   },
+	   success: function(data) {
+	   		DrawTimetable(data)
+	   },
+	});
+	var week_count = 0;
+	$( ".timetable-controls" ).click(function() {
+		var data = JSON.parse(getCookie('user').replace(/\[|\]/g, ''));
+
+		var start_date = moment('2017-05-08 00:00:00');
+		var end_date =  moment('2017-05-12 23:59:00');
+
+		var button_id = $(this).attr('id');
+
+		if(button_id == "next-week"){
+			week_count = week_count + 1;
+		}
+		else if (button_id == "prev-week")
+		{
+			week_count = week_count - 1;
+		}
+
+		start_date.add(week_count, 'weeks');
+		end_date.add(week_count, 'weeks');
+
+	 	$.ajax({
+		  type: "POST",
+		  url: '/students/wilkinst/cw1/getStudentView.php',
+		  data: {
+		        start_date: start_date.format("YYYY-MM-DD HH:mm:ss").toString(),
+		        end_date: end_date.format("YYYY-MM-DD HH:mm:ss").toString()
+		   },
+		   success: function(data) {
+		   	DrawTimetable(data);
+
+		   },
+		});
+	});
+
+	
+});
+
+
+function DrawTimetable(data)
+{
+
+	timetable = new Timetable();
+	var days = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat'];
+	var displayDays = ['Mon', 'Tues', 'Wed', 'Thurs', 'Fri'] // only monday - friday needed for headings but whole week needed to check day
+	timetable.addLocations(displayDays);
+	timetable.setScope(9, 16);
+
+	data = jQuery.parseJSON(data);
+
+	$.each(data, function(key,value) {
+		endDate = new Date(value.start_time * 1000);
+		startDate = new Date((value.start_time - 3600) * 1000); 
+		if (value.free_spaces > 0) {
+			var free_spaces = {
+				url: '#',
+				class: 'lesson-free',
+				data: {
+		    		id: value.session_id
+		  		}
+			}
+			timetable.addEvent((value.lesson + " " + value.free_spaces + " Spaces Left"), days[startDate.getDay()] , startDate,  endDate, free_spaces);
+		}
+		else {
+			var lesson_full = {
+		 	url: '#',
+		  	class: 'lesson-full',
+		  	data: {
+		    		id: value.session_id
+		  		}
+			}
+			timetable.addEvent(value.lesson, days[startDate.getDay()] , startDate,  endDate, lesson_full);
+		}
+
+	});
+
+
+
+
+
+	var renderer = new Timetable.Renderer(timetable);
+	renderer.draw('.timetable');
+	//could not use classes lesson-full and lesson-free click event would not bind possibly due to the dynamic nature of the content
+	 $( ".time-entry" ).click(function() {
+  		var classes = $(this).attr('class').split(/\s+/);
+  		if(classes[1] == 'lesson-full')
+  		{
+  			alert("This Slot is fully booked apologies :(")
+  		}
+  		else if(classes[1] == 'lesson-free')
+  		{
+  			var session_id = $(this).data('id');
+  			var data = JSON.parse(getCookie('user').replace(/\[|\]/g, ''));
+  			$.ajax({
+			  type: "POST",
+			  url: '/students/wilkinst/cw1/BookAppointment.php',
+			  data: {
+			        student_id: data.user_id,
+			    	session_id: session_id,
+			   },
+			   success: function(data) {
+			   		alert(data);
+			   		location.reload();
+				}
+			});
+  		}
+	});
+}
+ </script>
+ </html>

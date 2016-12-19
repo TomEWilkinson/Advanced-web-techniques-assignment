@@ -1,0 +1,388 @@
+
+ <!DOCTYPE html>
+ <html>
+ <head>
+ 	<title>Analysis</title>
+
+ 	<link rel="stylesheet" href="assets/timetablejs.css">
+ 	<link rel="stylesheet" href="assets/core.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+	<script src="assets/timetable.min.js"></script> 
+	<script src="assets/moment.min.js"></script> 
+  	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+	<script src="assets/main.js"></script>
+
+ </head>
+ <body>
+	 <nav class="navbar navbar-default">
+	    <div class="container-fluid">
+	      <!-- Brand and toggle get grouped for better mobile display -->
+	      <div class="navbar-header">
+	        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+	          <span class="sr-only">Toggle navigation</span>
+	          <span class="icon-bar"></span>
+	          <span class="icon-bar"></span>
+	          <span class="icon-bar"></span>
+	        </button>
+	        <a class="navbar-brand" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/AccountHomepage.html">TimeTable App</a>
+	      </div>
+
+	      <!-- Collect the nav links, forms, and other content for toggling -->
+	      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+	        <ul class="nav navbar-nav">
+	          <li class="my-timetable"><a href="#" return false;>My Timetable<span class="sr-only">(current)</span></a></li>
+          	  <li><a class="Update-Details" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/UpdateDetails.html">Update Details</a></li>
+          	  <li class="attendance-link"><a href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/attendance.html" return false; >Attendance<span class="sr-only">(current)</span></a></li>
+          	  <li class="edit-lessons"><a return false; style="display: none;" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/editLessons.html">Edit Lessons<span class="sr-only">(current)</span></a></li>
+          	  <li class="exam-results"><a return false; style="display: none;" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/examresults.html">Exam Results<span class="sr-only">(current)</span></a></li>
+          	  <li class="analysis active"><a return false; style="display: none;" href="#">Analysis<span class="sr-only">(current)</span></a></li>
+          	  <li class="map-link"><a return false; style="display: none;" href="http://mudfoot.doc.stu.mmu.ac.uk/students/wilkinst/cw1/campusmap.html">Map<span class="sr-only">(current)</span></a></li>
+	        </ul>
+	        <ul class="nav navbar-nav navbar-right">
+		       <li><a href="#" onClick="logOut()" return false;>logout</a></li>
+		    </ul>
+	      </div><!-- /.navbar-collapse -->
+	    </div><!-- /.container-fluid -->
+	  </nav>
+
+    <div class="container">
+		<label>Select A Lesson To View Analysis on the lesson</label>
+		<select id="lesson-name" class="form-control" required><option>Please Select</option><option>all</option></select>
+
+		<div id="graph-container">
+        	<canvas id="scatter-graph"></canvas>
+    	</div>
+    	<div id="analysis-section" style="display: none;">
+    		<p id="analysis-display">Analysis will show when a slider has been moved</p>
+    		<label>Mark</label>
+    		<div id="mark-slider">
+    			<div id="mark-handle" class="ui-slider-handle"></div>
+    		</div>
+    		<br><br>
+    		<label>Attendance</label>
+    		<div id="attendance-slider">
+    			<div id="attendance-handle" class="ui-slider-handle"></div>
+    		</div>
+    		<br> <br>
+    		<p> Adjust The Sliders to show how many students have a attendance > x and mark > x </p>
+    	</div>
+
+	</div>
+
+	
+
+	<div class="modal fade" id="table-update-message" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="myModalLabel">Update Message</h4>
+				</div>
+				<div class="modal-body">
+					<p id="update-message"></p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+ </body>
+ <script type="text/javascript">
+ var lessons = [];
+ $(document).ready(function() {
+    var user = getCookie('user').replace(/\[|\]/g, '');
+ 	getTimetableLink(user.is_staff);
+
+ 	var tableArray = [];
+
+	$.ajax({
+    type: "GET",
+    url: '/students/wilkinst/cw1/LessonsTable.php',
+    dataType:'json',
+     success: function(data) {
+     	var dropdown = "";
+     	lessons = data;
+     	for (var key in data) { 
+     		if(data[key].lesson != "Socrates Appointment")
+     		{
+     			dropdown = dropdown + "<option>" + data[key].lesson + "</option>";
+     		}
+     	}
+     	$('#lesson-name').append(dropdown);
+     	$('#lesson').append(dropdown);
+
+      }
+  	});
+
+  	$( "#lesson-name" ).change(function() {
+	  	GetDisplayData();	
+	 });
+
+
+	var tableArray = [];
+
+	$.get({
+		url: '/students/wilkinst/cw1/AttendanceTable.php', 
+		data: { }, 
+		success: function(data) {
+			data = JSON.parse(data);
+			for (var i = 0; i < data.length; i++) {
+				if (typeof tableArray[data[i].student_id] == 'undefined') {
+
+					tableArray[data[i].student_id] = {[data[i].lesson] : parseInt(data[i].attendance), "student_name" : data[i].student_name, "student_id":  data[i].student_id};
+					tableArray[data[i].student_id][[data[i].lesson] + "_total"] = 1;
+
+				}
+				else if(typeof tableArray[data[i].student_id][data[i].lesson] == 'undefined') {
+					tableArray[data[i].student_id][data[i].lesson] = parseInt(data[i].attendance);
+					tableArray[data[i].student_id][[data[i].lesson] + "_total"] = 1;
+				}
+				else {
+					tableArray[data[i].student_id][data[i].lesson] =  parseInt(tableArray[data[i].student_id][data[i].lesson]) +  parseInt(data[i].attendance);
+					tableArray[data[i].student_id][[data[i].lesson] + "_total"] = tableArray[data[i].student_id][[data[i].lesson + "_total"]] + 1;
+				}
+
+
+			}
+
+		}
+  });
+ 	
+});
+
+function GetDisplayData()
+{
+	var lessonName = $( "#lesson-name" ).val();
+	var resultsArray = [];
+	if(lessonName != "Please Select"){
+		$('#analysis-section').show();
+		$.ajax({
+			type: "POST",
+			data: {
+				lesson_name: lessonName,
+			},
+			url: '/students/wilkinst/cw1/ExamResults.php',
+			dataType:'json',
+			success: function(data) {
+				resultsArray = data;
+			}
+		});
+		var tableArray = [];
+
+		$.get({
+			url: '/students/wilkinst/cw1/AttendanceTable.php', 
+			data: { }, 
+			success: function(data) {
+
+				data = JSON.parse(data);
+				for (var i = 0; i < data.length; i++) {
+					if (typeof tableArray[data[i].student_id] == 'undefined') {
+
+						tableArray[data[i].student_id] = {[data[i].lesson] : parseInt(data[i].attendance), "student_name" : data[i].student_name, "student_id":  data[i].student_id};
+						tableArray[data[i].student_id][[data[i].lesson] + "_total"] = 1;
+
+					}
+					else if(typeof tableArray[data[i].student_id][data[i].lesson] == 'undefined') {
+						tableArray[data[i].student_id][data[i].lesson] = parseInt(data[i].attendance);
+						tableArray[data[i].student_id][[data[i].lesson] + "_total"] = 1;
+					}
+					else {
+						tableArray[data[i].student_id][data[i].lesson] =  parseInt(tableArray[data[i].student_id][data[i].lesson]) +  parseInt(data[i].attendance);
+						tableArray[data[i].student_id][[data[i].lesson] + "_total"] = tableArray[data[i].student_id][[data[i].lesson + "_total"]] + 1;
+					}
+
+
+				}
+				if(lessonName == "all"){
+					DisplayAllGraph(tableArray, resultsArray);
+				}
+				else {
+					DisplayGraph(tableArray, resultsArray, lessonName)
+				}
+			}
+		});
+
+	}
+}
+var chartData = [];
+
+function DisplayGraph(tableArray, resultsArray, lessonName)
+{
+  	chartData = [];
+
+  	var randomColorGenerator = function () { 
+  		return '#' + (Math.random().toString(16) + '0000000').slice(2, 8); 
+  	};
+
+  	for (var key in resultsArray) { 
+  		var randomColor = randomColorGenerator();
+  		chartData.push({
+  			label: resultsArray[key].student_name,
+  			borderColor: ColorLuminance(randomColor, -0.2),
+  			backgroundColor: randomColor,
+  			data: [{
+  				x: Math.round(((tableArray[resultsArray[key].student_id][lessonName]) / tableArray[resultsArray[key].student_id][lessonName + "_total"] * 100) * 100) /100,
+  				y: resultsArray[key].mark,
+  			}]
+  		})
+  	}
+  	var mydata = {
+  		datasets : chartData
+  	}
+
+  	if(window.myScatter != null){
+  		window.myScatter.clear();
+  	}
+  	var ctx = document.getElementById("scatter-graph").getContext("2d");
+  	 window.myScatter = Chart.Scatter(ctx, {
+  		data: mydata,
+  		options: {
+  			showLines: false,
+  			scales: {
+  				yAxes: [{
+  					scaleLabel: {
+  						display: true,
+  						labelString: 'Exam Mark'
+  					}
+  				}],
+  				xAxes: [{
+  					scaleLabel: {
+  						display: true,
+  						labelString: 'Mean Attendance'
+  					}
+  				}]
+  			},    
+  			title: {
+  				display: true,
+  				text: 'Mean Attendance in realtion to the Mark'
+  			},
+  		}
+  	});
+
+  }
+
+ function DisplayAllGraph(tableArray, resultsArray)
+{
+  	chartData = [];
+
+  	var randomColorGenerator = function () { 
+  		return '#' + (Math.random().toString(16) + '0000000').slice(2, 8); 
+  	};
+
+  	graphData = []
+
+  	for (var lessonskey in lessons){
+  		var randomColor = randomColorGenerator();
+  		graphData = {
+  			label: lessons[lessonskey].lesson,
+  			borderColor: ColorLuminance(randomColor, -0.2),
+  			backgroundColor: randomColor,
+  			fill: false,
+  			data: [],
+  		};
+	  	for (var resultskey in resultsArray) {
+	  		if(resultsArray[resultskey].lesson_name == lessons[lessonskey].lesson){
+	  			var temp  = {
+	  				x: Math.round(((tableArray[resultsArray[resultskey].student_id][lessons[lessonskey].lesson]) / tableArray[resultsArray[resultskey].student_id][lessons[lessonskey].lesson + "_total"] * 100) * 100) /100,
+	  				y: resultsArray[resultskey].mark,
+	  			};
+	  			graphData.data.push(temp);
+	  		}
+	  	}
+	  	graphData.data.sort(MarkSort);
+	  	chartData.push(graphData);
+	 }
+  	var mydata = {
+  		datasets : chartData
+  	}
+
+  	if(window.myScatter != null){
+  		window.myScatter.clear();
+  	}
+  	var ctx = document.getElementById("scatter-graph").getContext("2d");
+  	 window.myScatter = Chart.Scatter(ctx, {
+  		data: mydata,
+  		options: {
+  			showLines: false,
+  			scales: {
+  				yAxes: [{
+  					scaleLabel: {
+  						display: true,
+  						labelString: 'Exam Mark'
+  					}
+  				}],
+  				xAxes: [{
+  					scaleLabel: {
+  						display: true,
+  						labelString: 'Mean Attendance'
+  					}
+  				}]
+  			},    
+  			title: {
+  				display: true,
+  				text: 'Mean Attendance in realtion to the Mark'
+  			},
+  		}
+  	});
+
+  }
+
+function DisplayRelationShips()
+{
+	var studentCount = 0;
+	var totalStudentCount = 0;
+	var mark = $( "#mark-slider" ).slider( "value" );
+	var attendance = $( "#attendance-slider" ).slider( "value" ); 
+	for (var key in chartData) { 
+		if(chartData[key].label != "Socrates Appointment")
+		{
+			for (var studentKey in chartData[key].data) { 
+				totalStudentCount = totalStudentCount + 1;
+				var data = chartData[key].data[studentKey];
+				
+				if(data.x >= attendance && data.y >= mark)
+				{
+					studentCount = studentCount + 1;
+				}
+			}
+		}
+	}
+	$('#analysis-display').text("There are " + studentCount + " students out of " + totalStudentCount +" inbetween the params");
+}
+
+$( function() {
+    var handle = $( "#attendance-handle" );
+    $( "#attendance-slider" ).slider({
+      create: function() {
+        handle.text( $( this ).slider( "value" ) );
+      },
+      slide: function( event, ui ) {
+      	DisplayRelationShips();
+        handle.text( ui.value );
+      }
+    });
+  } );
+
+$( function() {
+    var handle = $( "#mark-handle" );
+    $( "#mark-slider" ).slider({
+      create: function() {
+        handle.text( $( this ).slider( "value" ) );
+      },
+      slide: function( event, ui ) {
+      	DisplayRelationShips();
+        handle.text( ui.value );
+      }
+    });
+  } );
+
+ </script>
+ </html>
