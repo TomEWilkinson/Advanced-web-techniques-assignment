@@ -18,7 +18,7 @@
 	    die("MySQL selection failed: " . mysql_error()); 
 	} 
 
-	// the selction succeeded, now let's try querying a table: 
+	// the selection succeeded, now let's try querying a table: 
 	$class_record_query = "SELECT * FROM class_record "; 
 
 	if(isset($_POST['student_id'])) {
